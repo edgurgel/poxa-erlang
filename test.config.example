@@ -1,0 +1,4 @@
+[{pusherl_api, [{port, 8080},
+                {app_id, <<"app">>},
+                {app_key, <<"app">>},
+                {app_secret, <<"appsecrett">>}]}].

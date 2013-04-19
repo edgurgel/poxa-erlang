@@ -1,0 +1,18 @@
+{application, pusherl_api,
+ [
+  {description, "Open Pusher implementation compatible with Pusher libraries"},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  compiler,
+                  syntax_tools,
+                  cowboy
+                 ]},
+  {mod, { pusherl_api_app, []}},
+  {env, [{port, 8080},
+         {app_key, <<"app_key">>},
+         {app_secret, <<"secret">>},
+         {app_id, <<"app_id">>}]}
+ ]}.

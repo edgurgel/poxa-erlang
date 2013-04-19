@@ -1,0 +1,9 @@
+#https://github.com/github/gitignore/blob/master/Erlang.gitignore
+.eunit
+deps
+ebin
+*.o
+*.beam
+*.plt
+log/
+erl_crash.dump

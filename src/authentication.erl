@@ -55,7 +55,7 @@ check_version(AuthVersion) ->
   end.
 
 check_body(Body, BodyMD5) ->
-  MD5 = hmac:hexlify(crypto:md5(Body)),
+  MD5 = list_to_binary(string:to_lower(hmac:hexlify(crypto:md5(Body)))),
   case MD5 of
     BodyMD5 -> ok;
     _ -> throw({badauth, "body_md5 does not match"})

@@ -49,17 +49,17 @@ invalid_version() ->
   ?assertThrow({badauth, "auth_version is not 1.0"}, authentication:check_version(<<"2.5">>)).
 
 valid_body() ->
-  Body = <<"YOLO">>,
-  MD5 = <<"MD5">>,
+  Body = "md5",
+  MD5 = <<"md5">>,
   % Could not mock crypto module
-  meck:expect(hmac, hexlify, 1, MD5),
+  meck:expect(hmac, hexlify, 1, "md5"),
   ?assertEqual(ok, authentication:check_body(Body, MD5)),
   ?assert(meck:validate(hmac)).
 
 invalid_body() ->
   Body = <<"YOLO">>,
   MD5 = <<"MD5">>,
-  meck:expect(hmac, hexlify, 1, <<"WRONGMD5">>),
+  meck:expect(hmac, hexlify, 1, "WRONGMD5"),
   ?assertThrow({badauth, "body_md5 does not match"}, authentication:check_body(Body, MD5)),
   ?assert(meck:validate(hmac)).
 

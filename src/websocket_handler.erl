@@ -49,6 +49,8 @@ handle_pusher_event(_, _Data, Req, State) ->
 websocket_info(start, Req, _State) ->
   % Unique identifier for the connection
   SocketId =  list_to_binary(uuid:to_string(uuid:uuid1())),
+  % Register the name of the connection as SocketId
+  gproc:reg({n, l, SocketId}),
   Encoded = jsx:encode([{<<"event">>, <<"pusher:connection_established">>},
                         {<<"data">>,
                          [{<<"socket_id">>, SocketId }]

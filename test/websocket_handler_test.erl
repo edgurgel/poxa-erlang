@@ -29,9 +29,11 @@ websocket_info_start() ->
   meck:expect(jsx, encode, 1, encodedData),
   meck:expect(uuid, uuid1, fun() -> meck:passthrough([]) end),
   meck:expect(uuid, to_string, 1, "uuid"),
+  meck:expect(gproc, reg, 1, registered),
   ?assertEqual({reply, {text, encodedData}, req, <<"uuid">>},
                websocket_handler:websocket_info(start, req, state)),
   ?assert(meck:validate(uuid)),
+  ?assert(meck:validate(gproc)),
   ?assert(meck:validate(jsx)).
 
 websocket_info_undefined() ->
@@ -146,6 +148,7 @@ start() ->
   meck:new(subscription),
   meck:new(cowboy_req),
   meck:new(jsx),
+  meck:new(gproc),
   meck:new(uuid).
 
 stop(_) ->
@@ -153,4 +156,5 @@ stop(_) ->
   meck:unload(subscription),
   meck:unload(cowboy_req),
   meck:unload(jsx),
+  meck:unload(gproc),
   meck:unload(uuid).

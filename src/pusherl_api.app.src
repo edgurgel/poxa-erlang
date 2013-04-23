@@ -1,7 +1,7 @@
 {application, pusherl_api,
  [
   {description, "Open Pusher implementation compatible with Pusher libraries"},
-  {vsn, "1"},
+  {vsn, "0.1"},
   {registered, []},
   {applications, [
                   kernel,

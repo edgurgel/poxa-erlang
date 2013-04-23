@@ -77,7 +77,7 @@ If you are using the pusher-gem:
 Pusher.host   = 'localhost'
 Pusher.port   = 8080
 ```
-
+And pusher-js:
 ```javascript
 Pusher.host    = 'localhost'
 Pusher.ws_port = 8080

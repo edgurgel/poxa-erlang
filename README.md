@@ -18,7 +18,6 @@ Open Pusher implementation compatible with Pusher libraries. It's designed to be
 * Integration test using pusher-js or other client library;
 * Web hooks;
 * Specify types signature to functions and use dyalizer to check them;
-* Exclude clients based on socket_id.
 * Split in rebar.config.test and rebar.config
 
 

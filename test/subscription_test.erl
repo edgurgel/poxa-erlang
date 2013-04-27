@@ -20,7 +20,7 @@ subscribe_public() ->
   ?assert(meck:validate(gproc)).
 
 subscribe_missing_channel() ->
-  ?assertEqual(ok, subscription:subscribe([], undefined)).
+  ?assertEqual(error, subscription:subscribe([], undefined)).
 
 subscribe_already_subscribed() ->
   meck:expect(gproc, lookup_local_properties, 1, [self()]),
@@ -31,27 +31,33 @@ subscribe_already_subscribed() ->
 
 subscribe_private() ->
   meck:expect(application, get_env, 2, {ok, <<"secret">>}),
-  Auth = hmac:hmac256(<<"secret">>, <<"SocketId:private-channel">>),
+  AppKey = <<"appkey">>,
+  Signature = list_to_binary(string:to_lower(hmac:hexlify(hmac:hmac256(<<"secret">>, <<"SocketId:private-channel">>)))),
+  Auth = <<AppKey/binary, ":" ,Signature/binary>>,
   meck:expect(gproc, lookup_local_properties, 1, []),
   meck:expect(gproc, reg, 1, registered),
+  meck:expect(authentication, check_key, 1, ok),
   ?assertEqual(ok, subscription:subscribe([{<<"channel">>, <<"private-channel">>},
                                            {<<"auth">>, Auth}],
                                           <<"SocketId">>)),
+  ?assert(meck:validate(authentication)),
   ?assert(meck:validate(application)),
   ?assert(meck:validate(gproc)).
 
 subscribe_private_bad_auth() ->
   meck:expect(application, get_env, 2, {ok, <<"secret">>}),
   Auth = hmac:hmac256(<<"secret">>, <<"WrongAuth">>),
-  ?assertEqual(ok, subscription:subscribe([{<<"channel">>, <<"private-channel">>},
-                                           {<<"auth">>, Auth}],
-                                          <<"SocketId">>)),
+  ?assertEqual(error, subscription:subscribe([{<<"channel">>, <<"private-channel">>},
+                                              {<<"auth">>, Auth}],
+                                             <<"SocketId">>)),
   ?assert(meck:validate(application)).
 
 start() ->
+  meck:new(authentication),
   meck:new(application, [unstick]),
   meck:new(gproc).
 
 stop(_) ->
+  meck:unload(authentication),
   meck:unload(application),
   meck:unload(gproc).

@@ -73,9 +73,7 @@ send_message_to_channels(Channels, Message, Exclude) ->
 send_message_to_channel(Channel, Message, PidToExclude) ->
   Message2 = lists:append(Message, [{<<"channel">>, Channel}]),
   Pids = gproc:lookup_pids({p, l, {pusher, Channel}}),
-  io:format("~p ~p~n", [Pids, PidToExclude]),
   Pids2 = Pids -- PidToExclude,
-  io:format("~p", [Pids2]),
   [Pid ! {self(), jsx:encode(Message2)} || Pid <- Pids2].
 
 % Remove name and add event to the response

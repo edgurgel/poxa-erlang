@@ -11,13 +11,13 @@ subscribe(Data, SocketId) ->
       validate(Channel, Auth, SocketId);
     undefined -> lager:info("Missing channel"),
       error;
-    _ -> ok
+    _ -> ok % Public channel
   end,
-  subscribe_channel(CheckChannel, Channel),
-  ok.
+  subscribe_channel(CheckChannel, Channel).
 
 subscribe_channel(error, Channel) ->
-  lager:info("Error while subscribing to channel ~p", [Channel]);
+  lager:info("Error while subscribing to channel ~p", [Channel]),
+  error;
 
 subscribe_channel(ok, Channel) ->
   lager:info("Subscribing to channel ~p", [Channel]),
@@ -26,7 +26,8 @@ subscribe_channel(ok, Channel) ->
     true -> lager:info("Already subscribed ~p on channel ~p", [self(), Channel]);
     false -> lager:info("Registering ~p to channel ~p", [self(), Channel]),
       gproc:reg({p, l, {pusher, Channel}})
-  end.
+  end,
+  ok.
 
 unsubscribe(Data) ->
   Channel = proplists:get_value(<<"channel">>, Data, undefined),

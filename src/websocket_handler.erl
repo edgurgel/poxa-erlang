@@ -33,14 +33,17 @@ websocket_handle({text, Json}, Req, State) ->
 
 handle_pusher_event(<<"pusher:subscribe">>, DecodedJson, Req, State) ->
   Data = proplists:get_value(<<"data">>, DecodedJson, undefined),
-  ok = subscription:subscribe(Data, State),
-  {ok, Req, State};
+  Reply = case subscription:subscribe(Data, State) of
+    ok -> pusher_event:subscription_succeeded();
+    error -> pusher_event:subscription_error()
+  end,
+  {reply, {text, Reply}, Req, State};
 handle_pusher_event(<<"pusher:unsubscribe">>, DecodedJson, Req, State) ->
   Data = proplists:get_value(<<"data">>, DecodedJson, undefined),
   subscription:unsubscribe(Data),
   {ok, Req, State};
 handle_pusher_event(<<"pusher:ping">>, _DecodedJson, Req, State) ->
-  Reply = jsx:encode([{<<"event">>, <<"pusher:pong">>}]),
+  Reply = pusher_event:pong(),
   {reply, {text, Reply} ,Req, State};
 handle_pusher_event(_, _Data, Req, State) ->
   lager:error("Undefined event"),
@@ -51,11 +54,8 @@ websocket_info(start, Req, _State) ->
   SocketId =  list_to_binary(uuid:to_string(uuid:uuid1())),
   % Register the name of the connection as SocketId
   gproc:reg({n, l, SocketId}),
-  Encoded = jsx:encode([{<<"event">>, <<"pusher:connection_established">>},
-                        {<<"data">>,
-                         [{<<"socket_id">>, SocketId }]
-                        }]),
-  {reply, {text, Encoded}, Req, SocketId};
+  Reply = pusher_event:connection_established(SocketId),
+  {reply, {text, Reply}, Req, SocketId};
 websocket_info({_PID, Msg}, Req, State) ->
   {reply, {text, Msg}, Req, State};
 websocket_info(Info, Req, State) ->

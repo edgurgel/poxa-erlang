@@ -30,8 +30,11 @@ websocket_info_start() ->
   meck:expect(uuid, uuid1, fun() -> meck:passthrough([]) end),
   meck:expect(uuid, to_string, 1, "uuid"),
   meck:expect(gproc, reg, 1, registered),
-  ?assertEqual({reply, {text, encodedData}, req, <<"uuid">>},
+  meck:expect(pusher_event, connection_established, 1, connection_established),
+
+  ?assertEqual({reply, {text, connection_established}, req, <<"uuid">>},
                websocket_handler:websocket_info(start, req, state)),
+  ?assert(meck:validate(pusher_event)),
   ?assert(meck:validate(uuid)),
   ?assert(meck:validate(gproc)),
   ?assert(meck:validate(jsx)).
@@ -54,9 +57,10 @@ websocket_handle_invalid_json() ->
 
 websocket_handle_ping() ->
   meck:expect(jsx, decode, 1, [{<<"event">>, <<"pusher:ping">>}]),
-  meck:expect(jsx, encode, 1, pong),
+  meck:expect(pusher_event, pong, 0, pong),
   ?assertEqual({reply, {text, pong}, req, state},
                websocket_handler:websocket_handle({text, subscribe_json}, req, state)),
+  ?assert(meck:validate(pusher_event)),
   ?assert(meck:validate(jsx)).
 
 websocket_handle_subscribe_private_channel() ->
@@ -66,9 +70,11 @@ websocket_handle_subscribe_private_channel() ->
                                {<<"data">>, [{<<"channel">>, <<"private-channel">>},
                                              {<<"auth">>, Auth}]}]),
   meck:expect(subscription, subscribe, 2, ok),
-  ?assertEqual({ok, req, <<"SocketId">>},
+  meck:expect(pusher_event, subscription_succeeded, 0, subscription_succeeded),
+  ?assertEqual({reply, {text, subscription_succeeded}, req, <<"SocketId">>},
                websocket_handler:websocket_handle({text, subscribe_json}, req, <<"SocketId">>)),
   ?assert(meck:validate(subscription)),
+  ?assert(meck:validate(pusher_event)),
   ?assert(meck:validate(application)),
   ?assert(meck:validate(jsx)).
 
@@ -78,29 +84,35 @@ websocket_handle_subscribe_private_channel_bad_auth() ->
   meck:expect(jsx, decode, 1, [{<<"event">>, <<"pusher:subscribe">>},
                                {<<"data">>, [{<<"channel">>, <<"private-channel">>},
                                              {<<"auth">>, Auth}]}]),
-  meck:expect(subscription, subscribe, 2, ok),
-  ?assertEqual({ok, req, <<"SocketId">>},
+  meck:expect(subscription, subscribe, 2, error),
+  meck:expect(pusher_event, subscription_error, 0, subscription_error),
+  ?assertEqual({reply, {text, subscription_error}, req, <<"SocketId">>},
                websocket_handler:websocket_handle({text, subscribe_json}, req, <<"SocketId">>)),
   ?assert(meck:validate(subscription)),
+  ?assert(meck:validate(pusher_event)),
   ?assert(meck:validate(application)),
   ?assert(meck:validate(jsx)).
 
 websocket_handle_subscribe() ->
   meck:expect(jsx, decode, 1, [{<<"event">>, <<"pusher:subscribe">>},
                                {<<"data">>, [{<<"channel">>, <<"test_channel">>}]}]),
+  meck:expect(pusher_event, subscription_succeeded, 0, subscription_succeeded),
   meck:expect(subscription, subscribe, 2, ok),
-  ?assertEqual({ok, req, state},
+  ?assertEqual({reply, {text, subscription_succeeded}, req, state},
                websocket_handler:websocket_handle({text, subscribe_json}, req, state)),
   ?assert(meck:validate(subscription)),
+  ?assert(meck:validate(pusher_event)),
   ?assert(meck:validate(jsx)).
 
 websocket_handle_subscribe_on_already_subscribed() ->
   meck:expect(jsx, decode, 1, [{<<"event">>, <<"pusher:subscribe">>},
                                {<<"data">>, [{<<"channel">>, <<"test_channel">>}]}]),
+  meck:expect(pusher_event, subscription_succeeded, 0, subscription_succeeded),
   meck:expect(subscription, subscribe, 2, ok),
-  ?assertEqual({ok, req, state},
+  ?assertEqual({reply,{text, subscription_succeeded}, req, state},
                websocket_handler:websocket_handle({text, subscribe_json}, req, state)),
   ?assert(meck:validate(subscription)),
+  ?assert(meck:validate(pusher_event)),
   ?assert(meck:validate(jsx)).
 
 websocket_handle_unsubscribe() ->
@@ -127,12 +139,12 @@ init() ->
 
 websocket_init() ->
   meck:expect(application, get_env, 2, {ok, <<"app_key">>}),
-  meck:expect(jsx, encode, 1, encodedData),
+  meck:expect(pusher_event, connection_established, 1, connection_established),
   meck:expect(cowboy_req, binding, 2, {<<"app_key">>, req} ),
   ?assertEqual({ok, req, empty},
                websocket_handler:websocket_init(transport, req, opts)),
   ?assert(meck:validate(application)),
-  ?assert(meck:validate(jsx)),
+  ?assert(meck:validate(pusher_event)),
   ?assert(meck:validate(cowboy_req)).
 
 websocket_init_wrong_app_key() ->
@@ -144,6 +156,7 @@ websocket_init_wrong_app_key() ->
   ?assert(meck:validate(cowboy_req)).
 
 start() ->
+  meck:new(pusher_event),
   meck:new(application, [unstick]),
   meck:new(subscription),
   meck:new(cowboy_req),
@@ -152,6 +165,7 @@ start() ->
   meck:new(uuid).
 
 stop(_) ->
+  meck:unload(pusher_event),
   meck:unload(application),
   meck:unload(subscription),
   meck:unload(cowboy_req),

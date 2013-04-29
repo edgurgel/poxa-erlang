@@ -26,38 +26,29 @@ subscribe_already_subscribed() ->
   meck:expect(gproc, lookup_local_properties, 1, [self()]),
   ?assertEqual(ok, subscription:subscribe([{<<"channel">>, <<"public-channel">>}],
                                           <<"SocketId">>)),
-  ?assert(meck:validate(application)),
   ?assert(meck:validate(gproc)).
 
 subscribe_private() ->
-  meck:expect(application, get_env, 2, {ok, <<"secret">>}),
-  AppKey = <<"appkey">>,
-  Signature = list_to_binary(string:to_lower(hmac:hexlify(hmac:hmac256(<<"secret">>, <<"SocketId:private-channel">>)))),
-  Auth = <<AppKey/binary, ":" ,Signature/binary>>,
   meck:expect(gproc, lookup_local_properties, 1, []),
   meck:expect(gproc, reg, 1, registered),
-  meck:expect(authentication, check_key, 1, ok),
+  meck:expect(auth_signature, validate, 3, ok),
   ?assertEqual(ok, subscription:subscribe([{<<"channel">>, <<"private-channel">>},
-                                           {<<"auth">>, Auth}],
+                                           {<<"auth">>, <<"signeddata">>}],
                                           <<"SocketId">>)),
-  ?assert(meck:validate(authentication)),
-  ?assert(meck:validate(application)),
+  ?assert(meck:validate(auth_signature)),
   ?assert(meck:validate(gproc)).
 
 subscribe_private_bad_auth() ->
-  meck:expect(application, get_env, 2, {ok, <<"secret">>}),
-  Auth = hmac:hmac256(<<"secret">>, <<"WrongAuth">>),
+  meck:expect(auth_signature, validate, 3, error),
   ?assertEqual(error, subscription:subscribe([{<<"channel">>, <<"private-channel">>},
-                                              {<<"auth">>, Auth}],
+                                              {<<"auth">>, <<"signeddata">>}],
                                              <<"SocketId">>)),
-  ?assert(meck:validate(application)).
+  ?assert(meck:validate(auth_signature)).
 
 start() ->
-  meck:new(authentication),
-  meck:new(application, [unstick]),
+  meck:new(auth_signature),
   meck:new(gproc).
 
 stop(_) ->
-  meck:unload(authentication),
-  meck:unload(application),
+  meck:unload(auth_signature),
   meck:unload(gproc).

@@ -8,7 +8,7 @@ subscribe(Data, SocketId) ->
   CheckChannel = case Channel of
     <<"private-", _PrivateChannel/binary>> ->
       Auth = proplists:get_value(<<"auth">>, Data),
-      validate(Channel, Auth, SocketId);
+      auth_signature:validate(Channel, Auth, SocketId);
     undefined -> lager:info("Missing channel"),
       error;
     _ -> ok % Public channel
@@ -38,29 +38,3 @@ unsubscribe(Data) ->
     false -> lager:debug("Already subscribed")
   end.
 
-% This function should be moved to authentication
-validate(_Channel, undefined, _SocketId) -> error;
-validate(Channel, Auth, SocketId) ->
-  ToSign = <<SocketId/binary, ":", Channel/binary>>,
-  try
-    [AppKey, RemoteSignedData] = split_auth(Auth),
-    ok = authentication:check_key(AppKey),
-    case application:get_env(pusherl_api, app_secret) of
-      {ok, AppSecret} ->
-        SignedData = list_to_binary(string:to_lower(hmac:hexlify(hmac:hmac256(AppSecret, ToSign)))),
-        case SignedData of
-          RemoteSignedData -> ok;
-          _ -> lager:info("Auth failed."),
-            error
-        end;
-      _ -> error
-    end
-  catch
-    error:{badmatch, BadMatch} -> lager:info("Badmatch ~p", [BadMatch]),
-      error;
-    throw:{badauth, Error} -> lager:info("Error during authentication ~p", [Error]),
-      error
-  end.
-
-split_auth(Auth) ->
-  binary:split(Auth, <<":">>).

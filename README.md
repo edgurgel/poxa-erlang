@@ -39,7 +39,7 @@ The default configuration is:
 * App key: 'app_key'
 * App secret: 'secret'
 
-You can set these values using this command:
+You can run and configure these values using this command:
 
 ```
 $ erl -pa ebin deps/*/ebin -pusherl_api port 9090 -pusherl_api app_id '<<"12345">>' -pusherl_api app_key '<<"key-12345">>' -pusherl_api app_secret '<<"secret6789">>' -s  pusherl_api

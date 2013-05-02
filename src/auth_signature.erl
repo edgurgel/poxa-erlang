@@ -1,12 +1,10 @@
 -compile([{parse_transform, lager_transform}]).
 -module(auth_signature).
 
--export([validate/3]).
+-export([validate/2]).
 % http://pusher.com/docs/auth_signatures
 
-validate(_Channel, undefined, _SocketId) -> error;
-validate(Channel, Auth, SocketId) ->
-  ToSign = <<SocketId/binary, ":", Channel/binary>>,
+validate(ToSign, Auth) ->
   try
     [AppKey, RemoteSignedData] = split_auth(Auth),
     ok = authentication:check_key(AppKey),

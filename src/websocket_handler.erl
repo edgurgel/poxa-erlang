@@ -35,6 +35,7 @@ handle_pusher_event(<<"pusher:subscribe">>, DecodedJson, Req, State) ->
   Data = proplists:get_value(<<"data">>, DecodedJson, undefined),
   Reply = case subscription:subscribe(Data, State) of
     ok -> pusher_event:subscription_succeeded();
+    {presence, Channel, PresenceData} -> pusher_event:presence_subscription_succeeded(Channel, PresenceData);
     error -> pusher_event:subscription_error()
   end,
   {reply, {text, Reply}, Req, State};

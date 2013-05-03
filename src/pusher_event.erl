@@ -19,4 +19,5 @@ subscription_error() ->
   jsx:encode([{<<"event">>, <<"pusher:subscription_error">>},
               {<<"data">>, []}]).
 pong() ->
-  jsx:encode([{<<"event">>, <<"pusher:pong">>}]).
+  jsx:encode([{<<"event">>, <<"pusher:pong">>},
+              {<<"data">>, []}]).

@@ -35,6 +35,7 @@ handle_pusher_event(<<"pusher:subscribe">>, DecodedJson, Req, State) ->
   Data = proplists:get_value(<<"data">>, DecodedJson, undefined),
   Reply = case subscription:subscribe(Data, State) of
     ok -> pusher_event:subscription_succeeded();
+    {presence, Channel, PresenceData} -> pusher_event:presence_subscription_succeeded(Channel, PresenceData);
     error -> pusher_event:subscription_error()
   end,
   {reply, {text, Reply}, Req, State};
@@ -63,4 +64,20 @@ websocket_info(Info, Req, State) ->
   {ok, Req, State}.
 
 websocket_terminate(_Reason, _Req, _State) ->
+  {gproc, GprocInfo} = gproc:info(self(), gproc),
+  % Keys look like:
+  % [{n,l, <<SocketId>>}, {p, l, {pusher, <<"channel">>}}]
+  Keys = orddict:fetch_keys(GprocInfo),
+  % FIXME This function is pretty much equals to unsubscribe on subscription module
+  MemberRemoveFun = fun({p, l, {pusher, Channel}} = Key) ->
+      case Channel of
+        <<"presence-", _PresenceChannel/binary>> ->
+          {UserId, _} = orddict:fetch(Key, GprocInfo),
+          Message = pusher_event:presence_member_removed(Channel, UserId),
+          gproc:send({p, l, {pusher, Channel}}, {self(), Message});
+        _ -> undefined
+      end;
+      (_) -> undefined
+  end,
+  lists:foreach(MemberRemoveFun, Keys),
   ok.

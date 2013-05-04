@@ -5,21 +5,23 @@ websocket_handler_test_() ->
   {foreach,
   fun start/0,
   fun stop/1,
-   [{"Handle websocket_info with message", fun websocket_info_normal/0},
-    {"Handle websocket_info on start", fun websocket_info_start/0},
-    {"Handle websocket_info without a message", fun websocket_info_undefined/0},
-    {"Handle websocket_handle undefined event", fun websocket_handle_undefined/0},
-    {"Handle websocket_handle invalid json", fun websocket_handle_invalid_json/0},
-    {"Handle websocket_handle ping", fun websocket_handle_ping/0},
-    {"Handle websocket_handle subscribe on private channel", fun websocket_handle_subscribe_private_channel/0},
-    {"Handle websocket_handle subscribe on private channel bad auth", fun websocket_handle_subscribe_private_channel_bad_auth/0},
-    {"Handle websocket_handle subscribe", fun websocket_handle_subscribe/0},
-    {"Handle websocket_handle subscribe on already subscribed", fun websocket_handle_subscribe_on_already_subscribed/0},
-    {"Handle websocket_handle unsubscribe", fun websocket_handle_unsubscribe/0},
-    {"Handle websocket_handle unsubscribe on non subscribed", fun websocket_handle_unsubscribe_on_non_subscribed/0},
-    {"Handle init and upgrade to websocket", fun init/0},
-    {"Handle websocket_init", fun websocket_init/0},
-    {"Handle websocket_init wrong app key", fun websocket_init_wrong_app_key/0}]}.
+   [{"websocket_info with message", fun websocket_info_normal/0},
+    {"websocket_info on start", fun websocket_info_start/0},
+    {"websocket_info without a message", fun websocket_info_undefined/0},
+    {"websocket_handle undefined event", fun websocket_handle_undefined/0},
+    {"websocket_handle invalid json", fun websocket_handle_invalid_json/0},
+    {"websocket_handle ping", fun websocket_handle_ping/0},
+    {"websocket_handle subscribe on private channel", fun websocket_handle_subscribe_private_channel/0},
+    {"websocket_handle subscribe on private channel bad auth", fun websocket_handle_subscribe_private_channel_bad_auth/0},
+    {"websocket_handle subscribe", fun websocket_handle_subscribe/0},
+    {"websocket_handle subscribe on already subscribed", fun websocket_handle_subscribe_on_already_subscribed/0},
+    {"websocket_handle unsubscribe", fun websocket_handle_unsubscribe/0},
+    {"websocket_handle unsubscribe on non subscribed", fun websocket_handle_unsubscribe_on_non_subscribed/0},
+    {"init and upgrade to websocket", fun init/0},
+    {"websocket_init", fun websocket_init/0},
+    {"websocket_init wrong app key", fun websocket_init_wrong_app_key/0},
+    {"websocket_terminate without presence channels", fun websocket_terminate_without_presence_channels/0},
+    {"websocket_terminate with presence channels to unsubscribe", fun websocket_terminate_with_presence_channels/0}]}.
 
 websocket_info_normal() ->
   ?assertEqual({reply, {text, msg}, req, state},
@@ -154,6 +156,23 @@ websocket_init_wrong_app_key() ->
                websocket_handler:websocket_init(transport, req, opts)),
   ?assert(meck:validate(application)),
   ?assert(meck:validate(cowboy_req)).
+
+websocket_terminate_without_presence_channels() ->
+  meck:expect(gproc, info, 2, {gproc,[{{p,l,{pusher,<<"private-channel">>}},undefined},
+                                      {{p,n,<<"SocketId">>},undefined}]}),
+  ?assertEqual(ok,
+               websocket_handler:websocket_terminate(reason, req, state)),
+  ?assert(meck:validate(gproc)).
+
+websocket_terminate_with_presence_channels() ->
+  meck:expect(gproc, info, 2, {gproc,[{{p,l,{pusher,<<"presence-channel">>}},{userid, userinfo}},
+                                      {{p,n,<<"SocketId">>},undefined}]}),
+  meck:expect(gproc, send, 2, ok),
+  meck:expect(pusher_event, presence_member_removed, 2, ok),
+  ?assertEqual(ok,
+               websocket_handler:websocket_terminate(reason, req, state)),
+  ?assert(meck:validate(pusher_event)),
+  ?assert(meck:validate(gproc)).
 
 start() ->
   meck:new(pusher_event),

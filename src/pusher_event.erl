@@ -22,7 +22,8 @@ subscription_error() ->
   jsx:encode([{<<"event">>, <<"pusher:subscription_error">>},
               {<<"data">>, []}]).
 pong() ->
-  jsx:encode([{<<"event">>, <<"pusher:pong">>}]).
+  jsx:encode([{<<"event">>, <<"pusher:pong">>},
+              {<<"data">>, []}]).
 
 % PresenceData looks like:
 % [{<0.45.0>,{id, userinfo}},

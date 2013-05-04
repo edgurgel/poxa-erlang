@@ -9,11 +9,11 @@ Open Pusher implementation compatible with Pusher libraries. It's designed to be
 
 * Public channels;
 * Private channels;
+* Presence channels;
 
 ## TODO
 
 * SSL on websocket and REST api;
-* Presence channels;
 * Client events;
 * Mimic pusher error codes;
 * Integration test using pusher-js or other client library;

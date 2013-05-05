@@ -1,4 +1,4 @@
--module(websocket_handler_test).
+-module(websocket_handler_tests).
 -include_lib("eunit/include/eunit.hrl").
 
 websocket_handler_test_() ->

@@ -1,4 +1,4 @@
--module(auth_signature_test).
+-module(auth_signature_tests).
 -include_lib("eunit/include/eunit.hrl").
 
 auth_signature_test_() ->

@@ -1,4 +1,4 @@
--module(event_handler_test).
+-module(event_handler_tests).
 -include_lib("eunit/include/eunit.hrl").
 
 event_handler_test_() ->

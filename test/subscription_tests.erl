@@ -1,4 +1,4 @@
--module(subscription_test).
+-module(subscription_tests).
 -include_lib("eunit/include/eunit.hrl").
 
 subscrition_test_() ->

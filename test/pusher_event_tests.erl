@@ -1,4 +1,4 @@
--module(pusher_event_test).
+-module(pusher_event_tests).
 -include_lib("eunit/include/eunit.hrl").
 
 pusher_event_test_() ->

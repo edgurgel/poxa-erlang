@@ -1,4 +1,4 @@
--module(authentication_test).
+-module(authentication_tests).
 -include_lib("eunit/include/eunit.hrl").
 
 authentication_test_() ->

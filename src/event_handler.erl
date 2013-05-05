@@ -21,12 +21,12 @@ handle(Req, State) ->
   case authentication:check(Path,Body, QsVals) of
     ok -> lager:debug("json decoding..."),
       try jsx:decode(Body) of
-        RequestData -> {RequestData2, Channels, Exclude} = parse_channels(RequestData),
+        RequestData -> {RequestData2, Channels, Exclude} = pusher_event:parse_channels(RequestData),
           case Channels of
             undefined -> lager:info("No channel defined"),
               {ok, Req3, State};
             _ -> Message = prepare_message(RequestData2),
-              send_message_to_channels(Channels, Message, Exclude),
+              pusher_event:send_message_to_channels(Channels, Message, Exclude),
               {ok, Req4} = cowboy_req:reply(200, [], <<"{}">>, Req3),
               {ok, Req4, State}
           end
@@ -40,19 +40,6 @@ handle(Req, State) ->
   end.
 
 
-parse_channels(Req) ->
-  Exclude = proplists:get_value(<<"socket_id">>, Req, undefined),
-  case proplists:get_value(<<"channel">>, Req) of
-    undefined ->
-      case proplists:get_value(<<"channels">>, Req) of
-        undefined -> {Req, undefined, Exclude}; % channel/channels not found
-        Channels -> Req2 = proplists:delete(<<"channels">>, Req),
-          {Req2, Channels, Exclude}
-      end;
-    Channel -> Req2 = proplists:delete(<<"channel">>, Req),
-      {Req2, [Channel], Exclude}
-  end.
-
 content_types_accepted(Req, State) ->
   {[{{<<"application">>, <<"json">>, []}, handle}], Req, State}.
 
@@ -61,20 +48,6 @@ content_types_provided(Req, State) ->
 
 terminate(_Reason, _Req, _State) ->
   ok.
-
-send_message_to_channels(Channels, Message, Exclude) ->
-  lager:debug("Sending message to channels ~p", [Channels]),
-  PidToExclude = case Exclude of
-    undefined -> [];
-    _ -> gproc:lookup_pids({n, l, Exclude})
-  end,
-  [send_message_to_channel(Channel, Message, PidToExclude) || Channel <- Channels].
-
-send_message_to_channel(Channel, Message, PidToExclude) ->
-  Message2 = lists:append(Message, [{<<"channel">>, Channel}]),
-  Pids = gproc:lookup_pids({p, l, {pusher, Channel}}),
-  Pids2 = Pids -- PidToExclude,
-  [Pid ! {self(), jsx:encode(Message2)} || Pid <- Pids2].
 
 % Remove name and add event to the response
 prepare_message(Message) ->

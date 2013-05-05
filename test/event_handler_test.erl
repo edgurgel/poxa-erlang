@@ -21,17 +21,16 @@ handle_single_channel_event() ->
   meck:expect(jsx, decode, 1,
               [{<<"channel">>, <<"channel_name">>},
                {<<"name">>, <<"event_etc">>} ]),
-  meck:sequence(gproc, lookup_pids, 1, [[], [self(), self()]]),
-  meck:expect(jsx, encode, 1,
-              [{<<"channel">>, <<"channel_name">>},
-               {<<"event">>, <<"event_etc">>}]),
   meck:expect(cowboy_req, reply, 4, {ok, req4}),
+  meck:expect(pusher_event, parse_channels, 1,
+              {[{<<"name">>, <<"event_etc">>}], channels, undefined}),
+  meck:expect(pusher_event, send_message_to_channels, 3, ok),
   ?assertEqual({ok, req4, state},
                event_handler:handle(req, state)),
   ?assert(meck:validate(authentication)),
   ?assert(meck:validate(cowboy_req)),
-  ?assert(meck:validate(jsx)),
-  ?assert(meck:validate(gproc)).
+  ?assert(meck:validate(pusher_event)),
+  ?assert(meck:validate(jsx)).
 
 handle_channel_event_excluding_socket_id() ->
   meck:expect(authentication, check, 3, ok),
@@ -39,21 +38,17 @@ handle_channel_event_excluding_socket_id() ->
               {ok, body, req1}),
   meck:expect(cowboy_req, qs_vals, 1, {qsvals, req2}),
   meck:expect(cowboy_req, path, 1, {path, req3}),
-  meck:expect(jsx, decode, 1,
-              [{<<"channel">>, <<"channel_name">>},
-               {<<"name">>, <<"event_etc">>},
-               {<<"socket_id">>, 123}]),
-  meck:sequence(gproc, lookup_pids, 1, [[pid1], [pid1, self()]]),
-  meck:expect(jsx, encode, 1,
-              [{<<"channel">>, <<"channel_name">>},
-               {<<"event">>, <<"event_etc">>}]),
+  meck:expect(jsx, decode, 1, decoded_json),
+  meck:expect(pusher_event, parse_channels, 1,
+              {[{<<"name">>, <<"event_etc">>}], channels, exclude}),
+  meck:expect(pusher_event, send_message_to_channels, 3, ok),
   meck:expect(cowboy_req, reply, 4, {ok, req4}),
   ?assertEqual({ok, req4, state},
                event_handler:handle(req, state)),
   ?assert(meck:validate(authentication)),
   ?assert(meck:validate(cowboy_req)),
-  ?assert(meck:validate(jsx)),
-  ?assert(meck:validate(gproc)).
+  ?assert(meck:validate(pusher_event)),
+  ?assert(meck:validate(jsx)).
 
 handle_multiple_channel_event() ->
   meck:expect(authentication, check, 3, ok),
@@ -61,20 +56,17 @@ handle_multiple_channel_event() ->
               {ok, body, req1}),
   meck:expect(cowboy_req, qs_vals, 1, {qsvals, req2}),
   meck:expect(cowboy_req, path, 1, {path, req3}),
-  meck:expect(jsx, decode, 1,
-              [{<<"channels">>, [<<"channel_name">>, <<"other_channel">>]},
-               {<<"name">>, <<"event_etc">>} ]),
-  meck:expect(gproc, lookup_pids, 1, [self()]),
-  meck:expect(jsx, encode, 1,
-              [{<<"channel">>, <<"channel_name">>},
-               {<<"event">>, <<"event_etc">>}]),
+  meck:expect(jsx, decode, 1, decoded_json),
+  meck:expect(pusher_event, parse_channels, 1,
+              {[{<<"name">>, <<"event_etc">>}], channels, undefined}),
+  meck:expect(pusher_event, send_message_to_channels, 3, ok),
   meck:expect(cowboy_req, reply, 4, {ok, req4}),
   ?assertEqual({ok, req4, state},
                event_handler:handle(req, state)),
   ?assert(meck:validate(authentication)),
   ?assert(meck:validate(cowboy_req)),
-  ?assert(meck:validate(jsx)),
-  ?assert(meck:validate(gproc)).
+  ?assert(meck:validate(pusher_event)),
+  ?assert(meck:validate(jsx)).
 
 handle_invalid_json() ->
   meck:expect(authentication, check, 3, ok),
@@ -96,14 +88,14 @@ handle_error_undefined_channel() ->
               {ok, undefined, req1}),
   meck:expect(cowboy_req, qs_vals, 1, {qsvals, req2}),
   meck:expect(cowboy_req, path, 1, {path, req3}),
-  meck:expect(jsx, decode, 1,
-              [{<<"no_channel">>, <<"etc">>}]),
+  meck:expect(jsx, decode, 1, decoded_json),
+  meck:expect(pusher_event, parse_channels, 1,
+              {[{<<"name">>, <<"event_etc">>}], undefined, exclude}),
   ?assertEqual({ok, req3, state},
                event_handler:handle(req, state)),
   ?assert(meck:validate(authentication)),
   ?assert(meck:validate(cowboy_req)),
-  ?assert(meck:validate(jsx)),
-  ?assert(meck:validate(gproc)).
+  ?assert(meck:validate(jsx)).
 
 handle_error_failing_authentication() ->
   meck:expect(authentication, check, 3, error),
@@ -117,18 +109,16 @@ handle_error_failing_authentication() ->
                event_handler:handle(req, state)),
   ?assert(meck:validate(authentication)),
   ?assert(meck:validate(cowboy_req)),
-  ?assert(meck:validate(jsx)),
-  ?assert(meck:validate(gproc)).
-
+  ?assert(meck:validate(jsx)).
 
 start() ->
+  meck:new(pusher_event),
   meck:new(authentication),
   meck:new(jsx),
-  meck:new(gproc),
   meck:new(cowboy_req).
 
 stop(_) ->
+  meck:unload(pusher_event),
   meck:unload(authentication),
   meck:unload(jsx),
-  meck:unload(gproc),
   meck:unload(cowboy_req).

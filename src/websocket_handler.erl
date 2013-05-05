@@ -46,9 +46,24 @@ handle_pusher_event(<<"pusher:unsubscribe">>, DecodedJson, Req, State) ->
 handle_pusher_event(<<"pusher:ping">>, _DecodedJson, Req, State) ->
   Reply = pusher_event:pong(),
   {reply, {text, Reply} ,Req, State};
+% Client Events
+handle_pusher_event(<<"client-", _EventName/binary>> = _Event, DecodedJson, Req, State) ->
+  {Message, Channels, _Exclude} = pusher_event:parse_channels(DecodedJson),
+  [pusher_event:send_message_to_channel(Channel, Message, [self()]) ||
+    Channel <- Channels, private_or_presence_channel(Channel)],
+  {ok, Req, State};
 handle_pusher_event(_, _Data, Req, State) ->
   lager:error("Undefined event"),
   {ok, Req, State}.
+
+private_or_presence_channel(Channel) ->
+  case Channel of
+    <<"presence-", _PresenceChannel/binary>> ->
+      true;
+    <<"private-", _PrivateChannel/binary>> ->
+      true;
+    _ -> false
+  end.
 
 websocket_info(start, Req, _State) ->
   % Unique identifier for the connection

@@ -1,3 +1,4 @@
+-compile([{parse_transform, lager_transform}]).
 -module(pusher_event).
 
 -export([subscription_succeeded/0]).
@@ -7,6 +8,9 @@
 -export([presence_subscription_succeeded/2]).
 -export([presence_member_added/3]).
 -export([presence_member_removed/2]).
+-export([send_message_to_channels/3]).
+-export([send_message_to_channel/3]).
+-export([parse_channels/1]).
 
 connection_established(SocketId) ->
   jsx:encode([{<<"event">>, <<"pusher:connection_established">>},
@@ -57,3 +61,30 @@ presence_member_removed(Channel, UserId) ->
               {<<"data">>, [
                 {<<"user_id">>, UserId}]
               }]).
+
+parse_channels(Req) ->
+  Exclude = proplists:get_value(<<"socket_id">>, Req, undefined),
+  case proplists:get_value(<<"channel">>, Req) of
+    undefined ->
+      case proplists:get_value(<<"channels">>, Req) of
+        undefined -> {Req, undefined, Exclude}; % channel/channels not found
+        Channels -> Req2 = proplists:delete(<<"channels">>, Req),
+          {Req2, Channels, Exclude}
+      end;
+    Channel -> Req2 = proplists:delete(<<"channel">>, Req),
+      {Req2, [Channel], Exclude}
+  end.
+
+send_message_to_channels(Channels, Message, Exclude) ->
+  lager:debug("Sending message to channels ~p", [Channels]),
+  PidToExclude = case Exclude of
+    undefined -> [];
+    _ -> gproc:lookup_pids({n, l, Exclude})
+  end,
+  [send_message_to_channel(Channel, Message, PidToExclude) || Channel <- Channels].
+
+send_message_to_channel(Channel, Message, PidToExclude) ->
+  Message2 = lists:append(Message, [{<<"channel">>, Channel}]),
+  Pids = gproc:lookup_pids({p, l, {pusher, Channel}}),
+  Pids2 = Pids -- PidToExclude,
+  [Pid ! {self(), jsx:encode(Message2)} || Pid <- Pids2].

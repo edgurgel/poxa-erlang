@@ -36,14 +36,14 @@ pong() ->
 presence_subscription_succeeded(Channel, PresenceData) ->
   % This may be too slow in the future...let's wait and see :)
   IdsHash = [{UserId, UserInfo} || {_Pid, {UserId, UserInfo}} <- PresenceData],
-  {Ids, Hash} = lists:unzip(IdsHash),
+  {Ids, _Hash} = lists:unzip(IdsHash),
   Count = length(Ids),
   jsx:encode([{<<"event">>, <<"pusher_internal:subscription_succeeded">>},
               {<<"channel">>, Channel},
               {<<"data">>,
                [{<<"presence">>, [
                 {<<"ids">>, Ids},
-                {<<"hash">>, Hash},
+                {<<"hash">>, IdsHash},
                 {<<"count">>, Count}
                 ]}]
               }]).

@@ -35,20 +35,27 @@ subscribe_presence_channel(Channel, ChannelData) ->
   try jsx:decode(ChannelData) of
     DecodedChannelData ->
       UserId = proplists:get_value(<<"user_id">>, DecodedChannelData),
+      SanitizedUserId = sanitize_user_id(UserId),
       UserInfo = proplists:get_value(<<"user_info">>, DecodedChannelData),
       Pids = gproc:lookup_local_properties({pusher, Channel}),
       case lists:any(fun(Pid) -> Pid == self() end, Pids) of
         true -> lager:info("Already subscribed ~p on channel ~p", [self(), Channel]);
         false -> lager:info("Registering ~p to channel ~p", [self(), Channel]),
-          Message = pusher_event:presence_member_added(Channel, UserId, UserInfo),
+          Message = pusher_event:presence_member_added(Channel, SanitizedUserId, UserInfo),
           gproc:send({p, l, {pusher, Channel}}, {self(), Message}),
-          gproc:reg({p, l, {pusher, Channel}}, {UserId, UserInfo})
+          gproc:reg({p, l, {pusher, Channel}}, {SanitizedUserId, UserInfo})
       end,
       {presence, Channel, gproc:lookup_values({p, l, {pusher, Channel}})}
   catch
     error:badarg ->
       lager:error("Invalid channel data"),
       error
+  end.
+
+sanitize_user_id(UserId) ->
+  case jsx:is_term(UserId) of
+    true -> jsx:encode(UserId);
+    false -> UserId
   end.
 
 subscribe_channel(Channel) ->

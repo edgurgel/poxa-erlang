@@ -2,6 +2,7 @@
 -module(subscription).
 
 -export([subscribe/2, unsubscribe/1]).
+-export([is_subscribed/1]).
 
 subscribe(Data, SocketId) ->
   Channel = proplists:get_value(<<"channel">>, Data),
@@ -89,3 +90,6 @@ unsubscribe_channel(Channel) ->
     false -> lager:debug("Already subscribed")
   end.
 
+is_subscribed(Channel) ->
+  {gproc, GprocInfo} = gproc:info(self(), gproc),
+  orddict:is_key({p, l, {pusher, Channel}}, GprocInfo).

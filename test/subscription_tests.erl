@@ -14,7 +14,9 @@ subscrition_test_() ->
    {"subscribe to a private channel and bad auth", fun subscribe_private_bad_auth/0},
    {"unsubscribe from a channel", fun unsubscribe_channel/0},
    {"unsubscribe from a channel without being subscribed", fun unsubscribe_channel_without_being_subscribed/0},
-   {"unsubscribe from a presence channel", fun unsubscribe_presence_channel/0}]
+   {"unsubscribe from a presence channel", fun unsubscribe_presence_channel/0},
+   {"returns true if a channel is subscribed", fun is_subscribed_true/0},
+   {"returns false if a channel is not subscribed", fun is_subscribed_false/0}]
   }.
 
 subscribe_public() ->
@@ -95,6 +97,18 @@ unsubscribe_presence_channel() ->
   meck:expect(pusher_event, presence_member_removed, 2, event_message),
   ?assertEqual(ok, subscription:unsubscribe([{<<"channel">>, <<"presence-channel">>}])),
   ?assert(meck:validate(pusher_event)),
+  ?assert(meck:validate(gproc)).
+
+is_subscribed_true() ->
+  meck:expect(gproc, info, 2, {gproc,[{{p,l,{pusher,<<"channel">>}},undefined},
+                                      {{p,n,<<"SocketId">>},undefined}]}),
+  ?assertEqual(true, subscription:is_subscribed(<<"channel">>)),
+  ?assert(meck:validate(gproc)).
+
+is_subscribed_false() ->
+  meck:expect(gproc, info, 2, {gproc,[{{p,l,{pusher,<<"channel">>}},undefined},
+                                      {{p,n,<<"SocketId">>},undefined}]}),
+  ?assertEqual(false, subscription:is_subscribed(<<"a-channel">>)),
   ?assert(meck:validate(gproc)).
 
 start() ->

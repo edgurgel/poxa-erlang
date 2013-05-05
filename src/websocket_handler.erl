@@ -50,7 +50,8 @@ handle_pusher_event(<<"pusher:ping">>, _DecodedJson, Req, State) ->
 handle_pusher_event(<<"client-", _EventName/binary>> = _Event, DecodedJson, Req, State) ->
   {Message, Channels, _Exclude} = pusher_event:parse_channels(DecodedJson),
   [pusher_event:send_message_to_channel(Channel, Message, [self()]) ||
-    Channel <- Channels, private_or_presence_channel(Channel)],
+    Channel <- Channels, private_or_presence_channel(Channel),
+                         subscription:is_subscribed(Channel)],
   {ok, Req, State};
 handle_pusher_event(_, _Data, Req, State) ->
   lager:error("Undefined event"),

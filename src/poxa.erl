@@ -1,4 +1,4 @@
--module(pusherl_api).
+-module(poxa).
 
 -export([start/0]).
 
@@ -9,4 +9,4 @@ start() ->
   ok = application:start(gproc),
   ok = application:start(erlsha2),
   ok = lager:start(),
-  ok = application:start(pusherl_api).
+  ok = application:start(poxa).

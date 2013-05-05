@@ -1,4 +1,4 @@
--module(pusherl_api_sup).
+-module(poxa_sup).
 -compile([{parse_transform, lager_transform}]).
 
 -behaviour(supervisor).
@@ -25,6 +25,6 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
-  lager:info("Initializing pusherl_api_sup"),
+  lager:info("Initializing poxa_api_sup"),
   {ok, { {one_for_one, 10, 10}, []} }.
 

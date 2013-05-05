@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.org/edgurgel/pusherl.png?branch=master)](https://travis-ci.org/edgurgel/pusherl)
+[![Build Status](https://travis-ci.org/edgurgel/poxa.png?branch=master)](https://travis-ci.org/edgurgel/poxa)
 
-# Pusherl
+# Poxa
 
 Open Pusher implementation compatible with Pusher libraries. It's designed to be used as a single registered app with id, secret and key defined on start.
 
@@ -24,7 +24,7 @@ Open Pusher implementation compatible with Pusher libraries. It's designed to be
 
 ## Typical usage
 
-Pusherl is a standalone erlang server implementation of the Pusher protocol.
+Poxa is a standalone erlang server implementation of the Pusher protocol.
 
 Clone this repository
 
@@ -43,7 +43,7 @@ The default configuration is:
 You can run and configure these values using this command:
 
 ```
-$ erl -pa ebin deps/*/ebin -pusherl_api port 9090 -pusherl_api app_id '<<"12345">>' -pusherl_api app_key '<<"key-12345">>' -pusherl_api app_secret '<<"secret6789">>' -s  pusherl_api
+$ erl -pa ebin deps/*/ebin -poxa port 9090 -poxa app_id '<<"12345">>' -poxa app_key '<<"key-12345">>' -poxa app_secret '<<"secret6789">>' -s  poxa
 ```
 
 Or you can setup a configuration file like this:
@@ -51,7 +51,7 @@ Or you can setup a configuration file like this:
 test.config
 
 ```erlang
-[{pusherl_api, [{port, 8080},
+[{poxa, [{port, 8080},
                 {app_id, <<"12345">>},
                 {app_key, <<"key-12345">>},
                 {app_secret, <<"secret6789">>}]}].
@@ -60,7 +60,7 @@ test.config
 And run:
 
 ```
-$ erl -pa ebin deps/*/ebin -config test -s  pusherl_api
+$ erl -pa ebin deps/*/ebin -config test -s  poxa
 ```
 
 ## Release
@@ -87,11 +87,11 @@ Pusher.ws_port = 8080
 
 ## Implementation
 
-Pusherl uses [gproc](https://github.com/uwiger/gproc) extensively to register websocket connections as channels. So, when a client subscribes for channel 'example-channel', the websocket connection (which is a erlang process) is "tagged" as **{pusher, example-channel}**. So when a pusher event is triggered on the 'example-channel', every websocket matching the tag receives the event.
+Poxa uses [gproc](https://github.com/uwiger/gproc) extensively to register websocket connections as channels. So, when a client subscribes for channel 'example-channel', the websocket connection (which is a erlang process) is "tagged" as **{pusher, example-channel}**. So when a pusher event is triggered on the 'example-channel', every websocket matching the tag receives the event.
 
 ## Contributing
 
-If you'd like to hack on Pusherl, start by forking my repo on Github.
+If you'd like to hack on Poxa, start by forking my repo on Github.
 
 You need [Erlang](http://www.erlang.org) and [rebar](https://github.com/basho/rebar). We are using Erlang R15B03, but you may try use it with other versions.
 

@@ -1,4 +1,4 @@
-{application, pusherl_api,
+{application, poxa,
  [
   {description, "Open Pusher implementation compatible with Pusher libraries"},
   {vsn, "0.2"},
@@ -10,7 +10,7 @@
                   syntax_tools,
                   cowboy
                  ]},
-  {mod, { pusherl_api_app, []}},
+  {mod, { poxa_app, []}},
   {env, [{port, 8080},
          {app_key, <<"app_key">>},
          {app_secret, <<"secret">>},

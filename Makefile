@@ -9,7 +9,7 @@ compile:
 	@$(REBAR) compile
 
 run:
-	erl -pa ebin deps/*/ebin -s pusherl_api
+	erl -pa ebin deps/*/ebin -s poxa
 
 test:
 	@$(REBAR) skip_deps=true eunit

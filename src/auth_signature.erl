@@ -8,7 +8,7 @@ validate(ToSign, Auth) ->
   try
     [AppKey, RemoteSignedData] = split_auth(Auth),
     ok = authentication:check_key(AppKey),
-    case application:get_env(pusherl_api, app_secret) of
+    case application:get_env(poxa, app_secret) of
       {ok, AppSecret} ->
         SignedData = list_to_binary(string:to_lower(hmac:hexlify(hmac:hmac256(AppSecret, ToSign)))),
         case SignedData of

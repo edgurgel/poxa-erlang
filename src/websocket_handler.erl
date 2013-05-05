@@ -14,11 +14,11 @@ init({tcp, http}, _Req, _Opts) ->
 
 websocket_init(_TransportName, Req, _Opts) ->
   {AppKey, Req} = cowboy_req:binding(app_key, Req),
-  case application:get_env(pusherl_api, app_key) of
+  case application:get_env(poxa, app_key) of
     {ok, AppKey} -> self() ! start,
       {ok, Req, empty};
     _ -> lager:error("Invalid app_key, expected ~p, found ~p",
-                     [application:get_env(pusherl_api, app_key), AppKey]), % FIXME error message?
+                     [application:get_env(poxa, app_key), AppKey]), % FIXME error message?
       {shutdown, Req, empty}
   end.
 

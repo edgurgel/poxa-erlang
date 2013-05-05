@@ -33,7 +33,7 @@ check(Path, Body, QsVals) ->
   end.
 
 check_key(AuthKey) ->
-  {ok, AppKey} = application:get_env(pusherl_api, app_key),
+  {ok, AppKey} = application:get_env(poxa, app_key),
   case AuthKey of
     AppKey -> ok;
     _ -> throw({badauth, "app_key and auth_key dont match."})
@@ -69,7 +69,7 @@ check_signature(Path, AuthKey, AuthTimestamp,
                            <<"&auth_timestamp=">>, AuthTimestamp,
                            <<"&auth_version=">>, AuthVersion,
                            <<"&body_md5=">>, BodyMD5]),
-  case application:get_env(pusherl_api, app_secret) of
+  case application:get_env(poxa, app_secret) of
     {ok, AppSecret} ->
       SignedData = list_to_binary(string:to_lower(hmac:hexlify(hmac:hmac256(AppSecret, ToSign)))),
       case SignedData of

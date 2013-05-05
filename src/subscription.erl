@@ -42,7 +42,6 @@ subscribe_presence_channel(Channel, ChannelData) ->
         false -> lager:info("Registering ~p to channel ~p", [self(), Channel]),
           Message = pusher_event:presence_member_added(Channel, UserId, UserInfo),
           gproc:send({p, l, {pusher, Channel}}, {self(), Message}),
-          lager:info("gproc sent ~p", [Message]),
           gproc:reg({p, l, {pusher, Channel}}, {UserId, UserInfo})
       end,
       {presence, Channel, gproc:lookup_values({p, l, {pusher, Channel}})}

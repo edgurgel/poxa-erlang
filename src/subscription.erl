@@ -38,8 +38,7 @@ subscribe_presence_channel(Channel, ChannelData) ->
       UserId = proplists:get_value(<<"user_id">>, DecodedChannelData),
       SanitizedUserId = sanitize_user_id(UserId),
       UserInfo = proplists:get_value(<<"user_info">>, DecodedChannelData),
-      Pids = gproc:lookup_local_properties({pusher, Channel}),
-      case lists:any(fun(Pid) -> Pid == self() end, Pids) of
+      case is_subscribed(Channel) of
         true -> lager:info("Already subscribed ~p on channel ~p", [self(), Channel]);
         false -> lager:info("Registering ~p to channel ~p", [self(), Channel]),
           Message = pusher_event:presence_member_added(Channel, SanitizedUserId, UserInfo),
@@ -61,8 +60,7 @@ sanitize_user_id(UserId) ->
 
 subscribe_channel(Channel) ->
   lager:info("Subscribing to channel ~p", [Channel]),
-  Pids = gproc:lookup_local_properties({pusher, Channel}),
-  case lists:any(fun(Pid) -> Pid == self() end, Pids) of
+  case is_subscribed(Channel) of
     true -> lager:info("Already subscribed ~p on channel ~p", [self(), Channel]);
     false -> lager:info("Registering ~p to channel ~p", [self(), Channel]),
       gproc:reg({p, l, {pusher, Channel}})
@@ -84,12 +82,14 @@ unsubscribe(Data) ->
   unsubscribe_channel(Channel).
 unsubscribe_channel(Channel) ->
   lager:info("Unsubscribing to channel ~p", [Channel]),
-  Pids = gproc:lookup_local_properties({pusher, Channel}),
-  case lists:any(fun(Pid) -> Pid == self() end, Pids) of
+  case is_subscribed(Channel) of
     true -> gproc:unreg({p, l, {pusher, Channel}});
     false -> lager:debug("Already subscribed")
   end.
 
 is_subscribed(Channel) ->
-  {gproc, GprocInfo} = gproc:info(self(), gproc),
-  orddict:is_key({p, l, {pusher, Channel}}, GprocInfo).
+  Match = {{p, l, {pusher, Channel}}, self(), '_'},
+  case gproc:select([{Match, [], ['$$']}]) of
+    [] -> false;
+    [_] -> true
+  end.

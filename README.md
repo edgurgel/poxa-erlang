@@ -30,8 +30,8 @@ Clone this repository
 
 Run
 
-```
-$ make deps compile
+```console
+make deps compile
 ```
 The default configuration is:
 
@@ -42,8 +42,8 @@ The default configuration is:
 
 You can run and configure these values using this command:
 
-```
-$ erl -pa ebin deps/*/ebin -poxa port 9090 -poxa app_id '<<"12345">>' -poxa app_key '<<"key-12345">>' -poxa app_secret '<<"secret6789">>' -s  poxa
+```console
+erl -pa ebin deps/*/ebin -poxa port 9090 -poxa app_id '<<"12345">>' -poxa app_key '<<"key-12345">>' -poxa app_secret '<<"secret6789">>' -s  poxa
 ```
 
 Or you can setup a configuration file like this:
@@ -59,8 +59,8 @@ test.config
 
 And run:
 
-```
-$ erl -pa ebin deps/*/ebin -config test -s  poxa
+```console
+erl -pa ebin deps/*/ebin -config test -s  poxa
 ```
 
 ## Release
@@ -97,20 +97,20 @@ You need [Erlang](http://www.erlang.org) and [rebar](https://github.com/basho/re
 
 Dependencies can be fetched running:
 
-```
-$ make deps
+```console
+make deps
 ```
 
 To compile:
 
-```
-$ make
+```console
+make
 ```
 
 The test suite used is the simple EUnit and [meck](http://github.com/eproxus/meck) to mock stuff. You can run the tests:
 
-```
-$ make test
+```console
+make test
 ```
 
 Pull requests are greatly appreciated.

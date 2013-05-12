@@ -3,6 +3,7 @@
 
 -export([subscribe/2, unsubscribe/1]).
 -export([is_subscribed/1]).
+-export([is_one_connection_on_user_id/2]).
 
 subscribe(Data, SocketId) ->
   Channel = proplists:get_value(<<"channel">>, Data),
@@ -41,8 +42,14 @@ subscribe_presence_channel(Channel, ChannelData) ->
       case is_subscribed(Channel) of
         true -> lager:info("Already subscribed ~p on channel ~p", [self(), Channel]);
         false -> lager:info("Registering ~p to channel ~p", [self(), Channel]),
-          Message = pusher_event:presence_member_added(Channel, SanitizedUserId, UserInfo),
-          gproc:send({p, l, {pusher, Channel}}, {self(), Message}),
+          case user_id_already_on_presence_channel(SanitizedUserId, Channel) of
+            false ->
+              Message = pusher_event:presence_member_added(Channel, SanitizedUserId, UserInfo),
+              gproc:add_shared_local_counter({presence, Channel, SanitizedUserId}, 1),
+              gproc:send({p, l, {pusher, Channel}}, {self(), Message});
+            true ->
+              gproc:update_shared_counter({c, l, {presence, Channel, SanitizedUserId}}, 1)
+          end,
           gproc:reg({p, l, {pusher, Channel}}, {SanitizedUserId, UserInfo})
       end,
       {presence, Channel, gproc:lookup_values({p, l, {pusher, Channel}})}
@@ -92,4 +99,17 @@ is_subscribed(Channel) ->
   case gproc:select([{Match, [], ['$$']}]) of
     [] -> false;
     [_] -> true
+  end.
+
+user_id_already_on_presence_channel(UserId, Channel) ->
+  Match = {{p, l, {pusher, Channel}}, '_', {UserId, '_'}},
+  case gproc:select([{Match, [], ['$$']}]) of
+    [] -> false;
+    [_] -> true
+  end.
+
+is_one_connection_on_user_id(Channel, UserId) ->
+  case gproc:get_value({c, l, {presence, Channel, UserId}}, shared) of
+    1 -> true;
+    _ -> false
   end.

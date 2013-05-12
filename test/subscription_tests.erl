@@ -50,6 +50,7 @@ subscribe_presence() ->
   meck:expect(gproc, lookup_values, 1, values),
   meck:expect(gproc, reg, 2, registered),
   meck:expect(gproc, send, 2, sent),
+  meck:expect(gproc, add_shared_local_counter, 2, ok),
   meck:expect(auth_signature, validate, 2, ok),
   meck:expect(pusher_event, presence_member_added, 3, event_message),
   ?assertEqual({presence, <<"presence-channel">>, values},

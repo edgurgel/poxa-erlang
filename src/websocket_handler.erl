@@ -80,26 +80,5 @@ websocket_info(Info, Req, State) ->
   {ok, Req, State}.
 
 websocket_terminate(_Reason, _Req, _State) ->
-  {gproc, GprocInfo} = gproc:info(self(), gproc),
-  % Keys look like:
-  % [{n,l, <<SocketId>>}, {p, l, {pusher, <<"channel">>}}]
-  Keys = orddict:fetch_keys(GprocInfo),
-  % FIXME This function is pretty much equals to unsubscribe on subscription module
-  MemberRemoveFun = fun({p, l, {pusher, Channel}} = Key) ->
-      case Channel of
-        <<"presence-", _PresenceChannel/binary>> ->
-          {UserId, _} = orddict:fetch(Key, GprocInfo),
-          case subscription:is_one_connection_on_user_id(Channel, UserId) of
-            true ->
-              gproc:unreg_shared({c, l, {presence, Channel, UserId}}),
-              Message = pusher_event:presence_member_removed(Channel, UserId),
-              gproc:send({p, l, {pusher, Channel}}, {self(), Message});
-            false->
-              gproc:update_shared_counter({c, l, {presence, Channel, UserId}}, -1)
-          end;
-        _ -> undefined
-      end;
-      (_) -> undefined
-  end,
-  lists:foreach(MemberRemoveFun, Keys),
+  presence_subscription:check_and_remove(),
   ok.

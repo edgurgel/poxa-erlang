@@ -20,7 +20,7 @@ subscrition_test_() ->
   }.
 
 subscribe_public() ->
-  meck:expect(gproc, select, 1, []),
+  meck:expect(gproc, select, 1, []), % is_subscribed returns false
   meck:expect(gproc, reg, 1, registered),
   ?assertEqual(ok, subscription:subscribe([{<<"channel">>, <<"public-channel">>}],
                                           undefined)),
@@ -36,7 +36,7 @@ subscribe_already_subscribed() ->
   ?assert(meck:validate(gproc)).
 
 subscribe_private() ->
-  meck:expect(gproc, select, 1, []),
+  meck:expect(gproc, select, 1, []), % is_subscribed returns false
   meck:expect(gproc, reg, 1, registered),
   meck:expect(auth_signature, validate, 2, ok),
   ?assertEqual(ok, subscription:subscribe([{<<"channel">>, <<"private-channel">>},
@@ -46,14 +46,11 @@ subscribe_private() ->
   ?assert(meck:validate(gproc)).
 
 subscribe_presence() ->
-  meck:expect(gproc, select, 1, []),
+  meck:expect(gproc, select, 1, []), % is_subscribed returns false
   meck:expect(gproc, lookup_values, 1, values),
-  meck:expect(gproc, reg, 2, registered),
-  meck:expect(gproc, send, 2, sent),
-  meck:expect(gproc, add_shared_local_counter, 2, ok),
   meck:expect(auth_signature, validate, 2, ok),
-  meck:expect(pusher_event, presence_member_added, 3, event_message),
-  ?assertEqual({presence, <<"presence-channel">>, values},
+  meck:expect(presence_subscription, subscribe, 2, registered_pusher_channel),
+  ?assertEqual(registered_pusher_channel,
                subscription:subscribe([{<<"channel">>, <<"presence-channel">>},
                                        {<<"auth">>, <<"signeddata">>},
                                        {<<"channel_data">>,
@@ -62,7 +59,7 @@ subscribe_presence() ->
                                       ],
                                           <<"SocketId">>)),
   ?assert(meck:validate(auth_signature)),
-  ?assert(meck:validate(pusher_event)),
+  ?assert(meck:validate(presence_subscription)),
   ?assert(meck:validate(gproc)).
 
 subscribe_private_bad_auth() ->
@@ -80,7 +77,7 @@ subscribe_presence_bad_auth() ->
   ?assert(meck:validate(auth_signature)).
 
 unsubscribe_channel() ->
-  meck:expect(gproc, select, 1, [something]),
+  meck:expect(gproc, select, 1, [something]), % is_subscribed returns true
   meck:expect(gproc, unreg, 1, ok),
   ?assertEqual(ok, subscription:unsubscribe([{<<"channel">>, <<"a_channel">>}])),
   ?assert(meck:validate(gproc)).
@@ -91,14 +88,11 @@ unsubscribe_channel_without_being_subscribed() ->
   ?assert(meck:validate(gproc)).
 
 unsubscribe_presence_channel() ->
-  meck:expect(gproc, select, 1, [something]),
-  meck:expect(gproc, select, 1, []),
-  meck:expect(gproc, get_value, 1, {userid, userinfo}),
   meck:expect(gproc, unreg, 1, ok),
-  meck:expect(gproc, send, 2, ok),
-  meck:expect(pusher_event, presence_member_removed, 2, event_message),
+  meck:expect(gproc, select, 1, [something]), % is_subscribed returns true
+  meck:expect(presence_subscription, unsubscribe, 1, ok),
   ?assertEqual(ok, subscription:unsubscribe([{<<"channel">>, <<"presence-channel">>}])),
-  ?assert(meck:validate(pusher_event)),
+  ?assert(meck:validate(presence_subscription)),
   ?assert(meck:validate(gproc)).
 
 is_subscribed_true() ->
@@ -112,11 +106,11 @@ is_subscribed_false() ->
   ?assert(meck:validate(gproc)).
 
 start() ->
-  meck:new(pusher_event),
+  meck:new(presence_subscription),
   meck:new(auth_signature),
   meck:new(gproc).
 
 stop(_) ->
-  meck:unload(pusher_event),
+  meck:unload(presence_subscription),
   meck:unload(auth_signature),
   meck:unload(gproc).

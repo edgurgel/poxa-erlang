@@ -25,9 +25,7 @@ websocket_handler_test_() ->
     {"init and upgrade to websocket", fun init/0},
     {"websocket_init", fun websocket_init/0},
     {"websocket_init wrong app key", fun websocket_init_wrong_app_key/0},
-    {"websocket_terminate without presence channels", fun websocket_terminate_without_presence_channels/0},
-    {"websocket_terminate with presence channel to unsubscribe having only one connection on specific userid", fun websocket_terminate_with_presence_channel_and_only_one_connection_on_user/0},
-    {"websocket_terminate with presence channel to unsubscribe having more than one connection on specific userid", fun websocket_terminate_with_presence_channel_and_more_than_one_connection_on_user/0}]}.
+    {"websocket_terminate with presence channel to unsubscribe having only one connection on specific userid", fun websocket_terminate/0}]}.
 
 websocket_info_normal() ->
   ?assertEqual({reply, {text, msg}, req, state},
@@ -205,43 +203,17 @@ websocket_init_wrong_app_key() ->
   ?assert(meck:validate(application)),
   ?assert(meck:validate(cowboy_req)).
 
-websocket_terminate_without_presence_channels() ->
-  meck:expect(gproc, info, 2, {gproc,[{{p,l,{pusher,<<"private-channel">>}},undefined},
-                                      {{p,n,<<"SocketId">>},undefined}]}),
+websocket_terminate() ->
+  meck:expect(presence_subscription, check_and_remove, 0, ok),
   ?assertEqual(ok,
                websocket_handler:websocket_terminate(reason, req, state)),
-  ?assert(meck:validate(gproc)).
-
-websocket_terminate_with_presence_channel_and_only_one_connection_on_user() ->
-  meck:expect(gproc, info, 2, {gproc,[{{p,l,{pusher,<<"presence-channel">>}},{userid, userinfo}},
-                                      {{p,n,<<"SocketId">>},undefined}]}),
-  meck:expect(gproc, send, 2, ok),
-  meck:expect(gproc, unreg_shared, 1, ok),
-  meck:expect(pusher_event, presence_member_removed, 2, ok),
-  meck:expect(subscription, is_one_connection_on_user_id, 2, true),
-  ?assertEqual(ok,
-               websocket_handler:websocket_terminate(reason, req, state)),
-  ?assert(meck:validate(pusher_event)),
-  ?assert(meck:validate(subscription)),
-  ?assert(meck:validate(gproc)).
-
-websocket_terminate_with_presence_channel_and_more_than_one_connection_on_user() ->
-  meck:expect(gproc, info, 2, {gproc,[{{p,l,{pusher,<<"presence-channel">>}},{userid, userinfo}},
-                                      {{p,n,<<"SocketId">>},undefined}]}),
-  meck:expect(gproc, send, 2, ok),
-  meck:expect(gproc, update_shared_counter, 2, ok),
-  meck:expect(pusher_event, presence_member_removed, 2, ok),
-  meck:expect(subscription, is_one_connection_on_user_id, 2, false),
-  ?assertEqual(ok,
-               websocket_handler:websocket_terminate(reason, req, state)),
-  ?assert(meck:validate(pusher_event)),
-  ?assert(meck:validate(subscription)),
-  ?assert(meck:validate(gproc)).
+  ?assert(meck:validate(presence_subscription)).
 
 start() ->
   meck:new(pusher_event),
   meck:new(application, [unstick]),
   meck:new(subscription),
+  meck:new(presence_subscription),
   meck:new(cowboy_req),
   meck:new(jsx),
   meck:new(gproc),
@@ -251,6 +223,7 @@ stop(_) ->
   meck:unload(pusher_event),
   meck:unload(application),
   meck:unload(subscription),
+  meck:unload(presence_subscription),
   meck:unload(cowboy_req),
   meck:unload(jsx),
   meck:unload(gproc),

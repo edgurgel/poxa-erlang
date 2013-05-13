@@ -3,7 +3,6 @@
 
 -export([subscribe/2, unsubscribe/1]).
 -export([is_subscribed/1]).
--export([is_one_connection_on_user_id/2]).
 
 subscribe(Data, SocketId) ->
   Channel = proplists:get_value(<<"channel">>, Data),
@@ -20,7 +19,7 @@ subscribe(Data, SocketId) ->
       ChannelData = proplists:get_value(<<"channel_data">>, Data, <<"undefined">>),
       ToSign = <<SocketId/binary, ":", Channel/binary, ":", ChannelData/binary>>,
       case auth_signature:validate(ToSign, Auth) of
-        ok -> subscribe_presence_channel(Channel, ChannelData);
+        ok -> presence_subscription:subscribe(Channel, ChannelData);
         error -> subscribe_error(Channel)
       end;
     undefined ->
@@ -32,38 +31,6 @@ subscribe(Data, SocketId) ->
 subscribe_error(Channel) ->
   lager:info("Error while subscribing to channel ~p", [Channel]),
   error.
-
-subscribe_presence_channel(Channel, ChannelData) ->
-  try jsx:decode(ChannelData) of
-    DecodedChannelData ->
-      UserId = proplists:get_value(<<"user_id">>, DecodedChannelData),
-      SanitizedUserId = sanitize_user_id(UserId),
-      UserInfo = proplists:get_value(<<"user_info">>, DecodedChannelData),
-      case is_subscribed(Channel) of
-        true -> lager:info("Already subscribed ~p on channel ~p", [self(), Channel]);
-        false -> lager:info("Registering ~p to channel ~p", [self(), Channel]),
-          case user_id_already_on_presence_channel(SanitizedUserId, Channel) of
-            false ->
-              Message = pusher_event:presence_member_added(Channel, SanitizedUserId, UserInfo),
-              gproc:add_shared_local_counter({presence, Channel, SanitizedUserId}, 1),
-              gproc:send({p, l, {pusher, Channel}}, {self(), Message});
-            true ->
-              gproc:update_shared_counter({c, l, {presence, Channel, SanitizedUserId}}, 1)
-          end,
-          gproc:reg({p, l, {pusher, Channel}}, {SanitizedUserId, UserInfo})
-      end,
-      {presence, Channel, gproc:lookup_values({p, l, {pusher, Channel}})}
-  catch
-    error:badarg ->
-      lager:error("Invalid channel data"),
-      error
-  end.
-
-sanitize_user_id(UserId) ->
-  case jsx:is_term(UserId) of
-    true -> jsx:encode(UserId);
-    false -> UserId
-  end.
 
 subscribe_channel(Channel) ->
   lager:info("Subscribing to channel ~p", [Channel]),
@@ -78,15 +45,11 @@ unsubscribe(Data) ->
   Channel = proplists:get_value(<<"channel">>, Data, undefined),
   case Channel of
     <<"presence-", _PresenceChannel/binary>> ->
-      case gproc:get_value({p, l, {pusher, Channel}}) of
-        {UserId, _} ->
-          Message = pusher_event:presence_member_removed(Channel, UserId),
-          gproc:send({p, l, {pusher, Channel}}, {self(), Message});
-        _ -> undefined
-      end;
+      presence_subscription:unsubscribe(Channel);
     _ -> undefined
   end,
   unsubscribe_channel(Channel).
+
 unsubscribe_channel(Channel) ->
   lager:info("Unsubscribing to channel ~p", [Channel]),
   case is_subscribed(Channel) of
@@ -101,15 +64,3 @@ is_subscribed(Channel) ->
     [_] -> true
   end.
 
-user_id_already_on_presence_channel(UserId, Channel) ->
-  Match = {{p, l, {pusher, Channel}}, '_', {UserId, '_'}},
-  case gproc:select([{Match, [], ['$$']}]) of
-    [] -> false;
-    [_] -> true
-  end.
-
-is_one_connection_on_user_id(Channel, UserId) ->
-  case gproc:get_value({c, l, {presence, Channel, UserId}}, shared) of
-    1 -> true;
-    _ -> false
-  end.

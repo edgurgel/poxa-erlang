@@ -14,6 +14,7 @@ Open Pusher implementation compatible with Pusher libraries. It's designed to be
 
 ## TODO
 
+* Complete REST api;
 * SSL on websocket and REST api;
 * Mimic pusher error codes;
 * Integration test using pusher-js or other client library;

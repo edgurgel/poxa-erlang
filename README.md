@@ -17,6 +17,7 @@ Open Pusher implementation compatible with Pusher libraries. It's designed to be
 * Complete REST api;
 * SSL on websocket and REST api;
 * Mimic pusher error codes;
+* Simple console;
 * Integration test using pusher-js or other client library;
 * Web hooks;
 * Specify types signature to functions and use dyalizer to check them;

@@ -15,6 +15,7 @@ start(_StartType, _StartArgs) ->
         {'_', [
             {"/ping", ping_handler, []},
             {"/apps/:app_id/events", event_handler, []},
+            {"/apps/:app_id/channels/[:channel]", channels_handler, []},
             {"/app/:app_key", websocket_handler, []}
             ]}
         ]),

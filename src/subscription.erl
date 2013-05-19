@@ -3,6 +3,7 @@
 
 -export([subscribe/2, unsubscribe/1]).
 -export([is_subscribed/1]).
+-export([count/1]).
 
 subscribe(Data, SocketId) ->
   Channel = proplists:get_value(<<"channel">>, Data),
@@ -64,3 +65,6 @@ is_subscribed(Channel) ->
     [_] -> true
   end.
 
+count(Channel) ->
+  Match = {{p, l, {pusher, Channel}}, '_', '_'},
+  gproc:select_count([{Match, [], [true]}]).

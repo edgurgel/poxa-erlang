@@ -4,6 +4,9 @@
 -export([subscribe/2]).
 -export([unsubscribe/1]).
 -export([check_and_remove/0]).
+-export([user_count/1]).
+-export([users/1]).
+-export([is_presence_channel/1]).
 
 subscribe(Channel, ChannelData) ->
   try jsx:decode(ChannelData) of
@@ -33,7 +36,6 @@ extract_userid_and_userinfo(ChannelData) ->
   UserId = sanitize_user_id(proplists:get_value(<<"user_id">>, ChannelData)),
   UserInfo = proplists:get_value(<<"user_info">>, ChannelData),
   {UserId, UserInfo}.
-
 
 unsubscribe(Channel) ->
   case gproc:get_value({p, l, {pusher, Channel}}) of
@@ -82,3 +84,16 @@ is_one_connection_on_user_id(Channel, UserId) ->
     _ -> false
   end.
 
+user_count(Channel) ->
+  Match = {{c, l, {presence, Channel, '_'}}, '_', '_'},
+  gproc:select_count([{Match, [], [true]}]).
+
+users(Channel) ->
+  Match = {{c, l, {presence, Channel, '$1'}}, '_', '_'},
+  gproc:select([{Match, [], ['$1']}]).
+
+is_presence_channel(Channel) ->
+  case Channel of
+    <<"presence-", _PresenceChannel/binary>> -> true;
+    _ -> false
+  end.

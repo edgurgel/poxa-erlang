@@ -1,4 +1,8 @@
 [{poxa, [{port, 8080},
-         {app_id, <<"app">>},
-         {app_key, <<"app">>},
-         {app_secret, <<"appsecrett">>}]}].
+         {app_id, <<"app_id">>},
+         {app_key, <<"app_key">>},
+         {app_secret, <<"secret">>},
+         {ssl, [{port, 8443},
+                {cacertfile, "priv/ssl/server-ca.crt"},
+                {certfile, "priv/ssl/server.crt"},
+                {keyfile, "priv/ssl/server.key"}]}]}].

@@ -9,7 +9,7 @@
 -export([content_types_provided/2]).
 -export([content_types_accepted/2]).
 
-init({tcp, http}, Req, _Opts) ->
+init(_Transport, Req, _Opts) ->
   lager:info("Event requested"),
   {ok, Req, undefined_state}.
 

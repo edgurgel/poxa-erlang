@@ -9,7 +9,7 @@
 -export([websocket_info/3]).
 -export([websocket_terminate/3]).
 
-init({tcp, http}, _Req, _Opts) ->
+init(_Transport, _Req, _Opts) ->
   {upgrade, protocol, cowboy_websocket}.
 
 websocket_init(_TransportName, Req, _Opts) ->

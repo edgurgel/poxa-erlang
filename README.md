@@ -11,11 +11,11 @@ Open Pusher implementation compatible with Pusher libraries. It's designed to be
 * Private channels;
 * Presence channels;
 * Client events;
+* SSL on websocket and REST api;
 
 ## TODO
 
 * Complete REST api;
-* SSL on websocket and REST api;
 * Mimic pusher error codes;
 * Simple console;
 * Integration test using pusher-js or other client library;
@@ -63,6 +63,19 @@ And run:
 
 ```console
 erl -pa ebin deps/*/ebin -config test -s  poxa
+```
+
+And if you want SSL, try something like this:
+
+```erlang
+[{poxa, [{port, 8080},
+         {app_id, <<"app_id">>},
+         {app_key, <<"app_key">>},
+         {app_secret, <<"secret">>},
+         {ssl, [{port, 8443},
+                {cacertfile, "priv/ssl/server-ca.crt"},
+                {certfile, "priv/ssl/server.crt"},
+                {keyfile, "priv/ssl/server.key"}]}]}].
 ```
 
 ## Release

@@ -73,7 +73,7 @@ user_id_already_on_presence_channel(UserId, Channel) ->
   Match = {{p, l, {pusher, Channel}}, '_', {UserId, '_'}},
   case gproc:select([{Match, [], ['$$']}]) of
     [] -> false;
-    [_] -> true
+    _ -> true
   end.
 
 is_one_connection_on_user_id(Channel, UserId) ->

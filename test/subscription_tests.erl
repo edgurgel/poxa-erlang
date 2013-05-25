@@ -9,6 +9,7 @@ subscrition_test_() ->
    {"subscribe with missing channel", fun subscribe_missing_channel/0},
    {"subscribe to an already subscribed channel", fun subscribe_already_subscribed/0},
    {"subscribe to a private channel", fun subscribe_private/0},
+   {"subscribe to a private channel with channel data", fun subscribe_private_with_channel_data/0},
    {"subscribe to a presence channel", fun subscribe_presence/0},
    {"subscribe to a presence_channel and bad auth", fun subscribe_presence_bad_auth/0},
    {"subscribe to a private channel and bad auth", fun subscribe_private_bad_auth/0},
@@ -41,6 +42,20 @@ subscribe_private() ->
   meck:expect(auth_signature, validate, 2, ok),
   ?assertEqual(ok, subscription:subscribe([{<<"channel">>, <<"private-channel">>},
                                            {<<"auth">>, <<"signeddata">>}],
+                                          <<"SocketId">>)),
+  ?assert(meck:validate(auth_signature)),
+  ?assert(meck:validate(gproc)).
+
+subscribe_private_with_channel_data() ->
+  meck:expect(gproc, select, 1, []), % is_subscribed returns false
+  meck:expect(gproc, reg, 1, registered),
+  meck:expect(auth_signature, validate, 2, ok),
+  ?assertEqual(ok, subscription:subscribe([{<<"channel">>, <<"private-channel">>},
+                                           {<<"auth">>, <<"signeddata">>},
+                                           {<<"channel_data">>,
+                                            <<"{\"user_id\" : \"id123\", \"user_info\" : \"info456\" }">>
+                                           }
+                                          ],
                                           <<"SocketId">>)),
   ?assert(meck:validate(auth_signature)),
   ?assert(meck:validate(gproc)).

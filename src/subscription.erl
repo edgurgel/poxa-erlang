@@ -9,7 +9,10 @@ subscribe(Data, SocketId) ->
   case Channel of
     <<"private-", _PrivateChannel/binary>> ->
       Auth = proplists:get_value(<<"auth">>, Data),
-      ToSign = <<SocketId/binary, ":", Channel/binary>>,
+      ToSign = case proplists:get_value(<<"channel_data">>, Data, undefined) of
+        undefined -> <<SocketId/binary, ":", Channel/binary>>;
+        ChannelData -> <<SocketId/binary, ":", Channel/binary, ":", ChannelData/binary>>
+      end,
       case auth_signature:validate(ToSign, Auth) of
         ok -> subscribe_channel(Channel);
         error -> subscribe_error(Channel)

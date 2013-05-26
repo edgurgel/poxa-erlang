@@ -1,7 +1,7 @@
 {application, poxa,
  [
   {description, "Open Pusher implementation compatible with Pusher libraries"},
-  {vsn, "0.3.4"},
+  {vsn, "0.3.5"},
   {registered, []},
   {applications, [
                   kernel,

@@ -1,4 +1,5 @@
 -compile([{parse_transform, lager_transform}]).
+-compile([{parse_transform, gproc_pt}]).
 -module(presence_subscription).
 
 -export([subscribe/2]).
@@ -16,7 +17,7 @@ subscribe(Channel, ChannelData) ->
             false ->
               Message = pusher_event:presence_member_added(Channel, UserId, UserInfo),
               gproc:add_shared_local_counter({presence, Channel, UserId}, 1),
-              gproc:send({p, l, {pusher, Channel}}, {self(), Message});
+              {p, l, {pusher, Channel}} ! {self(), Message}; % gproc:send
             true ->
               gproc:update_shared_counter({c, l, {presence, Channel, UserId}}, 1)
           end,
@@ -39,7 +40,7 @@ unsubscribe(Channel) ->
   case gproc:get_value({p, l, {pusher, Channel}}) of
     {UserId, _} ->
       Message = pusher_event:presence_member_removed(Channel, UserId),
-      gproc:send({p, l, {pusher, Channel}}, {self(), Message});
+      {p, l, {pusher, Channel}} ! {self(), Message}; % gproc:send
     _ -> undefined
   end.
 
@@ -53,7 +54,7 @@ check_and_remove() ->
             true ->
               gproc:unreg_shared({c, l, {presence, Channel, UserId}}),
               Message = pusher_event:presence_member_removed(Channel, UserId),
-              gproc:send({p, l, {pusher, Channel}}, {self(), Message});
+              {p, l, {pusher, Channel}} ! {self(), Message}; % gproc:send
             false->
               gproc:update_shared_counter({c, l, {presence, Channel, UserId}}, -1)
           end;

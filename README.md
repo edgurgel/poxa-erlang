@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/edgurgel/poxa.png?branch=master)](https://travis-ci.org/edgurgel/poxa)
+[![Build Status](https://travis-ci.org/edgurgel/poxa-erlang.png)](https://travis-ci.org/edgurgel/poxa-erlang)
 
 # Poxa
 

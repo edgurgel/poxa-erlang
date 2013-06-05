@@ -4,6 +4,7 @@
 
 Open Pusher implementation compatible with Pusher libraries. It's designed to be used as a single registered app with id, secret and key defined on start.
 
+You should check this repository: https://github.com/edgurgel/poxa . There is a port of this project in Elixir and this repository won't be mantained in favor of the Elixir version.
 
 ## Features
 
